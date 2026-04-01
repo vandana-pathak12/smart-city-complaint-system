@@ -7,74 +7,72 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// MySQL connection
-const db = mysql.createConnection({
-host:"localhost",
-user:"root",
-password:"Van!12345",
-database:"smart_city"
+// ✅ MySQL connection (Cloud - Railway)
+const db = mysql.createConnection(process.env.MYSQL_URL)
+
+// ✅ Connect DB
+db.connect((err) => {
+  if (err) {
+    console.log("❌ DB Connection Error:", err)
+  } else {
+    console.log("✅ MySQL Connected")
+  }
 })
 
-db.connect((err)=>{
-if(err){
-console.log(err)
-}else{
-console.log("MySQL Connected")
-}
-})
-app.post("/complaint",(req,res)=>{
+// ✅ POST - Add complaint
+app.post("/complaint", (req, res) => {
+  const { description, location } = req.body
 
-const {description,location} = req.body
+  const sql = "INSERT INTO complaints(description, location, status) VALUES (?, ?, ?)"
 
-const sql = "INSERT INTO complaints(description,location,status) VALUES(?,?,?)"
-
-db.query(sql,[description,location,"pending"],(err,result)=>{
-if(err){
-console.log(err)
-res.send("Error inserting complaint")
-}else{
-res.send("Complaint submitted successfully")
-}
+  db.query(sql, [description, location, "pending"], (err, result) => {
+    if (err) {
+      console.log(err)
+      res.send("Error inserting complaint")
+    } else {
+      res.send("Complaint submitted successfully")
+    }
+  })
 })
 
-})
-app.get("/complaints",(req,res)=>{
+// ✅ GET - All complaints
+app.get("/complaints", (req, res) => {
+  const sql = "SELECT * FROM complaints"
 
-const sql = "SELECT * FROM complaints"
-
-db.query(sql,(err,result)=>{
-if(err){
-console.log(err)
-res.send("Error fetching complaints")
-}else{
-res.json(result)
-}
-})
-
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.log(err)
+      res.send("Error fetching complaints")
+    } else {
+      res.json(result)
+    }
+  })
 })
 
-app.put("/complaint/:id",(req,res)=>{
+// ✅ PUT - Update status
+app.put("/complaint/:id", (req, res) => {
+  const id = req.params.id
 
-const id = req.params.id
+  const sql = "UPDATE complaints SET status='resolved' WHERE id=?"
 
-const sql = "UPDATE complaints SET status='resolved' WHERE id=?"
-
-db.query(sql,[id],(err,result)=>{
-if(err){
-console.log(err)
-res.send("Error updating status")
-}else{
-res.send("Complaint resolved")
-}
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.log(err)
+      res.send("Error updating status")
+    } else {
+      res.send("Complaint resolved")
+    }
+  })
 })
 
+// ✅ Test route
+app.get("/", (req, res) => {
+  res.send("Server running")
 })
 
-// test route
-app.get("/",(req,res)=>{
-res.send("Server running")
-})
+// ✅ IMPORTANT: Render ke liye dynamic port
+const PORT = process.env.PORT || 5000
 
-app.listen(5000,()=>{
-console.log("Server running on port 5000")
+app.listen(PORT, () => {
+  console.log(` Server running on port ${PORT}`)
 })
